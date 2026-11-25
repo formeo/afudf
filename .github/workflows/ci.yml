@@ -114,7 +114,8 @@ jobs:
           Pop-Location
           foreach ($m in 'afcommon','afucrypt','afudbf','afufile','afumisc','afutextfile','afuxml','afuzip') {
             Push-Location "src/$m"
-            fpc -B -Mobjfpc "-T$t" "-P$c" -Fu../common -Fu../cmnunits -Fi../common -Fl../afmmngr "$m.lpr"
+            # Аргументы, начинающиеся с '-', обернуты в кавычки для корректной передачи в fpc.exe из PowerShell
+            fpc -B -Mobjfpc "-T$t" "-P$c" "-Fu../common" "-Fu../cmnunits" "-Fi../common" "-Fl../afmmngr" "$m.lpr"
             if ($LASTEXITCODE -ne 0) { Pop-Location; exit $LASTEXITCODE }
             Pop-Location
           }
