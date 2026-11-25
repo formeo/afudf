@@ -19,13 +19,20 @@ jobs:
           sudo apt-get install -y fpc firebird3.0-server-core firebird3.0-utils libib-util libfbclient2
 
       - name: Build UDF modules
+        shell: pwsh
         run: |
-          set -e
-          # сначала разделяемый менеджер памяти, от него зависят остальные
-          (cd src/afmmngr && fpc -B -Mobjfpc afmmngr.lpr)
-          for m in afcommon afucrypt afudbf afufile afumisc afutextfile afuxml afuzip; do
-            (cd "src/$m" && fpc -B -Mobjfpc -Fu../common -Fu../cmnunits -Fi../common -Fl../afmmngr "$m.lpr")
-          done
+          $t = "${{ matrix.target }}"; $c = "${{ matrix.cpu }}"
+          Push-Location src/afmmngr
+          fpc -B -Mobjfpc "-T$t" "-P$c" afmmngr.lpr
+          if ($LASTEXITCODE -ne 0) { Pop-Location; exit $LASTEXITCODE }
+          Pop-Location
+          foreach ($m in 'afcommon','afucrypt','afudbf','afufile','afumisc','afutextfile','afuxml','afuzip') {
+            Push-Location "src/$m"
+            # Аргументы, начинающиеся с '-', обернуты в кавычки для корректной передачи в fpc.exe из PowerShell
+            fpc -B -Mobjfpc "-T$t" "-P$c" "-Fu../common" "-Fu../cmnunits" "-Fi../common" "-Fl../afmmngr" "$m.lpr"
+            if ($LASTEXITCODE -ne 0) { Pop-Location; exit $LASTEXITCODE }
+            Pop-Location
+          }
 
       - name: Deploy UDF modules
         run: |
