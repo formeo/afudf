@@ -16,3 +16,4 @@ resource/win64-x86_64/*
 todo.txt
 Makefile
 src/*/Makefile
+.idea
