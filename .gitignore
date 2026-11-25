@@ -17,3 +17,11 @@ todo.txt
 Makefile
 src/*/Makefile
 .idea
+
+# direct fpc builds in src/ (CI)
+*.o
+*.ppu
+*.or
+*.compiled
+*.rsj
+src/*/lib*.so

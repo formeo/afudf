@@ -10,7 +10,7 @@
   #define platformdir = "win32-i386"
 #endif
 
-#define AppVersion "1.5.7.1060"
+#define AppVersion "1.5.8.1060"
 
 
 [Setup]

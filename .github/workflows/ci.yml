@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [master, 'fix/**']
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
@@ -64,3 +65,75 @@ jobs:
           name: afudf-linux-x86_64
           path: src/*/lib*.so
           if-no-files-found: ignore
+
+  windows:
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: win32, cpu: i386 }
+          - { target: win64, cpu: x86_64 }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install FPC 3.2.2 (win32 + win64)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri "https://sourceforge.net/projects/freepascal/files/Win32/3.2.2/fpc-3.2.2.win32.and.win64.exe/download" -OutFile fpc-setup.exe
+          Start-Process .\fpc-setup.exe -ArgumentList '/VERYSILENT','/NORESTART' -Wait
+          Add-Content $env:GITHUB_PATH "C:\fpc\3.2.2\bin\i386-win32"
+
+      - name: Build UDF modules
+        shell: pwsh
+        run: |
+          $t = "${{ matrix.target }}"; $c = "${{ matrix.cpu }}"
+          Push-Location src/afmmngr
+          fpc -B -Mobjfpc "-T$t" "-P$c" afmmngr.lpr
+          if ($LASTEXITCODE -ne 0) { Pop-Location; exit $LASTEXITCODE }
+          Pop-Location
+          foreach ($m in 'afcommon','afucrypt','afudbf','afufile','afumisc','afutextfile','afuxml','afuzip') {
+            Push-Location "src/$m"
+            fpc -B -Mobjfpc "-T$t" "-P$c" -Fu../common -Fu../cmnunits -Fi../common -Fl../afmmngr "$m.lpr"
+            if ($LASTEXITCODE -ne 0) { Pop-Location; exit $LASTEXITCODE }
+            Pop-Location
+          }
+
+      - name: Check built DLLs
+        shell: pwsh
+        run: |
+          $dlls = Get-ChildItem src -Filter *.dll -Recurse
+          $dlls | ForEach-Object FullName
+          if ($dlls.Count -lt 9) { throw "Expected 9 DLLs, got $($dlls.Count)" }
+
+      - name: Upload DLLs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: afudf-${{ matrix.target }}
+          path: src/**/*.dll
+          if-no-files-found: ignore
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [linux-x86_64, windows]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package artifacts
+        run: |
+          cd artifacts
+          for d in */; do
+            (cd "$d" && zip -r "../afudf-${d%/}.zip" .)
+          done
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: artifacts/*.zip

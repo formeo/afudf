@@ -1,7 +1,7 @@
 # User defined functions for [FireBird](http://firebirdsql.org)
 
 [![CI](https://github.com/formeo/afudf/actions/workflows/ci.yml/badge.svg)](https://github.com/formeo/afudf/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](COPYING.TXT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Firebird](https://img.shields.io/badge/Firebird-1.0+-orange.svg)](http://firebirdsql.org)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg)]()
 [![Made with Free Pascal](https://img.shields.io/badge/made%20with-Free%20Pascal-blue.svg)](https://www.freepascal.org)
@@ -23,6 +23,19 @@ The library contains functions for working with files such as:
  * [Installation](install.md)
  * [Examples](examples.md)
  * [Changelog](changelog.txt)
+
+## Firebird 4 and newer
+
+Starting with Firebird 4, UDF support is deprecated and **disabled by default**
+(`UdfAccess = None`). To use AFUDF, enable it in `firebird.conf`:
+
+```
+UdfAccess = Restrict UDF
+```
+
+and restart the server. The same setting is required for Firebird 3.0 packages
+in modern Debian/Ubuntu (see CVE-2025-65104). The UDF mechanism itself is
+unchanged, so AFUDF works on Firebird 4/5 once UDF access is enabled.
 
 ## Dependencies
 

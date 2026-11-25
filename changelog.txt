@@ -1,3 +1,12 @@
+1.5.8
+[*] Fix x64: object handles are Int64, SQL declarations use BIGINT
+[*] Validate object handles via shared registry in afmmngr (crash protection)
+[*] Unix: cthreads added to all modules (thread-safe heap in Superclassic)
+[*] iconvwin: size_t = PtrUInt (Win64 crash fix), iconv_open error check, fast path for same encodings
+[+] CI: GitHub Actions — Linux build + SQL tests, Windows build (win32/win64), release by tag
+[*] tests: p_common accepts Linux message variant 'File not found'
+[*] License file COPYING.TXT renamed to LICENSE (MIT)
+
 1.5.7
 [*] Code refactoring: all modules
 [*] Translated comments
