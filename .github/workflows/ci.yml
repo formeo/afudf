@@ -80,11 +80,20 @@ jobs:
       - name: Install FPC 3.2.2 (win32 + win64)
         shell: pwsh
         run: |
-          # важно: URL .../download отдаёт HTML-страницу, а не exe —
-          # используем прямую ссылку на зеркало downloads.sourceforge.net
-          Invoke-WebRequest -Uri "https://downloads.sourceforge.net/project/freepascal/Win32/3.2.2/fpc-3.2.2.win32.and.win64.exe" -OutFile fpc-setup.exe
-          # защита от скачивания HTML вместо установщика (~80 МБ у настоящего)
-          if ((Get-Item fpc-setup.exe).Length -lt 10MB) { throw "fpc-setup.exe too small — downloaded HTML instead of the installer" }
+          # Invoke-WebRequest плохо дружит с SourceForge (скачивает HTML вместо exe),
+          # поэтому curl.exe — он предустановлен на windows-раннерах
+          $urls = @(
+            "https://downloads.sourceforge.net/project/freepascal/Win32/3.2.2/fpc-3.2.2.win32.and.win64.exe",
+            "https://ftp.freepascal.org/pub/fpc/dist/3.2.2/i386-win32/fpc-3.2.2.win32.and.win64.exe"
+          )
+          $ok = $false
+          foreach ($u in $urls) {
+            Write-Host "Downloading $u"
+            curl.exe -fSL --retry 3 --retry-all-errors -o fpc-setup.exe $u
+            if ($LASTEXITCODE -eq 0 -and (Get-Item fpc-setup.exe).Length -gt 10MB) { $ok = $true; break }
+            Write-Host "download failed or file too small, trying next mirror"
+          }
+          if (-not $ok) { throw "Failed to download FPC installer from all mirrors" }
           Start-Process .\fpc-setup.exe -ArgumentList '/VERYSILENT','/NORESTART' -Wait
           Add-Content $env:GITHUB_PATH "C:\fpc\3.2.2\bin\i386-win32"
 
