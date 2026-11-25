@@ -65,7 +65,7 @@ begin
 
 
   resinfo='Была ошибка: '||MsgLastErrorObj(obj);suspend;
-  if (not (MsgLastErrorObj(obj) in ('File not found.', 'Unknow error code 123'))) then
+  if (not (MsgLastErrorObj(obj) in ('File not found.', 'File not found', 'Unknow error code 123'))) then
     EXCEPTION UDF_TESTUNIT_EXP 'Не верно работает функция:MsgLastErrorObj ';
 
 

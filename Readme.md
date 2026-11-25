@@ -1,5 +1,11 @@
 # User defined functions for [FireBird](http://firebirdsql.org)
 
+[![CI](https://github.com/formeo/afudf/actions/workflows/ci.yml/badge.svg)](https://github.com/formeo/afudf/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](COPYING.TXT)
+[![Firebird](https://img.shields.io/badge/Firebird-1.0+-orange.svg)](http://firebirdsql.org)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg)]()
+[![Made with Free Pascal](https://img.shields.io/badge/made%20with-Free%20Pascal-blue.svg)](https://www.freepascal.org)
+
 ## Description
 The library contains functions for working with files such as:
  Text files, [DBF](https://en.wikipedia.org/wiki/.dbf), [XML](https://en.wikipedia.org/wiki/XML). With it you can create and read text files, DBF, XML. It is also possible to parse and serialize XML document from / to strings, BLOB.

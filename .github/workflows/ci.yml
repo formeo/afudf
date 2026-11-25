@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [master, 'fix/**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux-x86_64:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install FPC and Firebird
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fpc firebird3.0-server-core firebird3.0-utils libib-util libfbclient2
+
+      - name: Build UDF modules
+        run: |
+          set -e
+          # сначала разделяемый менеджер памяти, от него зависят остальные
+          (cd src/afmmngr && fpc -B -Mobjfpc afmmngr.lpr)
+          for m in afcommon afucrypt afudbf afufile afumisc afutextfile afuxml afuzip; do
+            (cd "src/$m" && fpc -B -Mobjfpc -Fu../common -Fu../cmnunits -Fi../common -Fl../afmmngr "$m.lpr")
+          done
+
+      - name: Deploy UDF modules
+        run: |
+          UDFDIR=$(dpkg -L firebird3.0-server-core | grep -m1 '/UDF$')
+          echo "UDF dir: $UDFDIR"
+          # Firebird ищет модуль по MODULE_NAME без префикса "lib"
+          # и при UdfAccess=Restrict не принимает симлинки — только файлы
+          for f in src/*/lib*.so; do
+            base=$(basename "$f")
+            sudo cp "$f" "$UDFDIR/${base#lib}"
+          done
+          # libafmmngr.so — runtime-зависимость модулей
+          sudo cp src/afmmngr/libafmmngr.so /usr/lib/
+          sudo ldconfig
+
+      - name: Enable UDF access
+        # в Debian/Ubuntu по умолчанию UdfAccess = None
+        run: sudo sed -i 's/^UdfAccess = None/UdfAccess = Restrict UDF/' /etc/firebird/3.0/firebird.conf
+
+      - name: Run SQL test suite
+        run: |
+          mkdir -p /tmp/firebird
+          # embedded-режим: подключение по локальному пути, без сервера и пароля SYSDBA
+          sed "s|localhost:/tmp/firebird/|/tmp/firebird/|g" tests/createdbtest.sql > ci_test.sql
+          ISQL=$(command -v isql-fb || command -v isql)
+          "$ISQL" -i ci_test.sql | tee ci_output.txt
+          if grep -qE 'Statement failed|SQLSTATE' ci_output.txt; then
+            echo "::error::SQL test suite failed, see log above"
+            exit 1
+          fi
+          echo "All tests passed"
+
+      - name: Upload built libraries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: afudf-linux-x86_64
+          path: src/*/lib*.so
+          if-no-files-found: ignore
